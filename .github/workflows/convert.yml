@@ -46,7 +46,7 @@ jobs:
         python convert.py
 
     - name: Upload converted MLPackage
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ github.event.inputs.model_name }}
         path: ${{ github.event.inputs.model_name }}.mlpackage

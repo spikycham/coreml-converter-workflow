@@ -12,7 +12,7 @@ spec = importlib.util.spec_from_file_location("model_module", "model.py")
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
 
-model = m.ModelRegressor()
+model = m.ModelStructure()
 model.load_state_dict(torch.load("best.pt", map_location="cpu"))
 model.eval()
 
