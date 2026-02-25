@@ -1,32 +1,27 @@
+import os
 import torch
 import coremltools as ct
-from torch import nn
-from predict import ModelRegressor
+import importlib.util
 
+# parse input shape
+shape = tuple(map(int, os.environ["MODEL_INPUT"].split(",")))
+model_name = os.environ["MODEL_NAME"]
 
-# ==== load model ====
-model = ModelRegressor()
-state_dict = torch.load("best.pt", map_location="cpu")
-model.load_state_dict(state_dict)
+# dynamic import
+spec = importlib.util.spec_from_file_location("model_module", "model.py")
+m = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(m)
+
+model = m.ModelRegressor()
+model.load_state_dict(torch.load("best.pt", map_location="cpu"))
 model.eval()
 
-# ==== trace ====
-example_input = torch.randn(1, 3, 300, 300)
-traced_model = torch.jit.trace(model, example_input)
+example_input = torch.randn(*shape)
+traced = torch.jit.trace(model, example_input)
 
-# ==== convert to Core ML ====
 mlmodel = ct.convert(
-    traced_model,
-    inputs=[
-        ct.TensorType(
-            name="image",
-            shape=example_input.shape,
-        )
-    ],
-    compute_units=ct.ComputeUnit.ALL,
+    traced,
+    inputs=[ct.TensorType(name="input", shape=shape)],
 )
 
-# ==== save ====
-mlmodel.save("ios.mlpackage")
-
-# print("✅ Converted to ios.mlpackage")
+mlmodel.save(f"{model_name}.mlpackage")

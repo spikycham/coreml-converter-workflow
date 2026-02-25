@@ -1,0 +1,52 @@
+name: Convert PT to MLPackage
+
+on:
+  workflow_dispatch:
+    inputs:
+      pt_url:
+        description: 'URL to the .pt file'
+        required: true
+      py_url:
+        description: 'URL to the model.py file'
+        required: true
+      model_input:
+        description: 'The input shape of model, e.g. 1,3,224,224'
+        required: true
+      model_name:
+        description: 'Output name of model, e.g. citrus_count'
+        required: true
+
+jobs:
+  convert:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install torch coremltools
+
+    - name: Download model files
+      run: |
+        curl -L ${{ github.event.inputs.pt_url }} -o best.pt
+        curl -L ${{ github.event.inputs.py_url }} -o model.py
+
+    - name: Convert PT to MLPackage
+      env:
+        MODEL_INPUT: ${{ github.event.inputs.model_input }}
+        MODEL_NAME: ${{ github.event.inputs.model_name }}
+      run: |
+        python convert.py
+
+    - name: Upload converted MLPackage
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ github.event.inputs.model_name }}
+        path: ${{ github.event.inputs.model_name }}.mlpackage
