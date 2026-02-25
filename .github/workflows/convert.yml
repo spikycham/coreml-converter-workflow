@@ -31,7 +31,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install torch coremltools
+        pip install torch torchvision coremltools
 
     - name: Download model files
       run: |
