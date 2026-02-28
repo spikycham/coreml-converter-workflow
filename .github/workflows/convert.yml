@@ -35,8 +35,8 @@ jobs:
 
     - name: Download model files
       run: |
-        curl -L ${{ github.event.inputs.pt_url }} -o best.pt
-        curl -L ${{ github.event.inputs.py_url }} -o model.py
+        curl -L ${{ github.event.inputs.pt_url }} -o ${{ github.event.inputs.model_name }}.pt
+        curl -L ${{ github.event.inputs.py_url }} -o ${{ github.event.inputs.model_name }}.py
 
     - name: Convert PT to MLPackage
       env:
