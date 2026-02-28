@@ -15,6 +15,12 @@ on:
       model_name:
         description: 'Output name of model, e.g. citrus_count'
         required: true
+      model_description:
+        description: 'The desciption of model'
+        required: true
+      model_result_keys:
+        description: 'Predict result keys split with comma, e.g. count,size'
+        required: true
 
 jobs:
   convert:
@@ -45,8 +51,34 @@ jobs:
       run: |
         python convert.py
 
-    - name: Upload converted MLPackage
+    - name: Generate metadata and bundle model
+      run: |
+        BUNDLE_DIR="${{ github.event.inputs.model_name }}.bundle"
+        MODEL_NAME="${{ github.event.inputs.model_name }}"
+
+        mkdir -p "$BUNDLE_DIR"
+
+        # Generate metadata json
+        python - << 'EOF'
+    import json
+
+    meta = {
+      "name": "${{ github.event.inputs.model_name }}",
+      "description": "${{ github.event.inputs.model_description }}",
+      "input_shape": "${{ github.event.inputs.model_input }}",
+      "result_keys": "${{ github.event.inputs.model_result_keys }}"
+    }
+
+    with open(f"{meta['name']}.json", "w") as f:
+        json.dump(meta, f, indent=2)
+    EOF
+
+        # Move outputs into bundle
+        mv "$MODEL_NAME.mlpackage" "$BUNDLE_DIR/"
+        mv "$MODEL_NAME.json" "$BUNDLE_DIR/"
+
+    - name: Upload model bundle
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.inputs.model_name }}.mlpackage
-        path: ${{ github.event.inputs.model_name }}.mlpackage
+        name: ${{ github.event.inputs.model_name }}.bundle
+        path: ${{ github.event.inputs.model_name }}.bundle
