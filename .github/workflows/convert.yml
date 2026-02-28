@@ -52,30 +52,34 @@ jobs:
         python convert.py
 
     - name: Generate metadata and bundle model
+      env:
+        INPUT_NAME: ${{ github.event.inputs.model_name }}
+        INPUT_DESC: ${{ github.event.inputs.model_description }}
+        INPUT_SHAPE: ${{ github.event.inputs.model_input }}
+        INPUT_KEYS: ${{ github.event.inputs.model_result_keys }}
       run: |
-        BUNDLE_DIR="${{ github.event.inputs.model_name }}.bundle"
-        MODEL_NAME="${{ github.event.inputs.model_name }}"
-
+        BUNDLE_DIR="${INPUT_NAME}.bundle"
         mkdir -p "$BUNDLE_DIR"
 
-        # Generate metadata json
         python - << 'EOF'
-    import json
+        import json
+        import os
 
-    meta = {
-      "name": "${{ github.event.inputs.model_name }}",
-      "description": "${{ github.event.inputs.model_description }}",
-      "input_shape": "${{ github.event.inputs.model_input }}",
-      "result_keys": "${{ github.event.inputs.model_result_keys }}"
-    }
+        meta = {
+            "name": os.environ['INPUT_NAME'],
+            "description": os.environ['INPUT_DESC'],
+            "input_shape": os.environ['INPUT_SHAPE'],
+            "result_keys": os.environ['INPUT_KEYS']
+        }
 
-    with open(f"{meta['name']}.json", "w") as f:
-        json.dump(meta, f, indent=2)
-    EOF
+        with open(f"{meta['name']}.json", "w") as f:
+            json.dump(meta, f, indent=2)
+        EOF
 
-        # Move outputs into bundle
-        mv "$MODEL_NAME.mlpackage" "$BUNDLE_DIR/"
-        mv "$MODEL_NAME.json" "$BUNDLE_DIR/"
+        if [ -d "${INPUT_NAME}.mlpackage" ]; then
+          mv "${INPUT_NAME}.mlpackage" "$BUNDLE_DIR/"
+        fi
+        mv "${INPUT_NAME}.json" "$BUNDLE_DIR/"
 
     - name: Upload model bundle
       uses: actions/upload-artifact@v4
