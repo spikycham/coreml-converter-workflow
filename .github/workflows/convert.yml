@@ -7,7 +7,7 @@ on:
         description: 'URL to the .pt file'
         required: true
       py_url:
-        description: 'URL to the model.py file'
+        description: 'URL to the .py file'
         required: true
       model_input:
         description: 'The input shape of model, e.g. 1,3,224,224'
